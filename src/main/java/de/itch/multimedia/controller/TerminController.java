@@ -2,6 +2,7 @@ package de.itch.multimedia.controller;
 
 import de.itch.multimedia.db.TerminDb;
 import de.itch.multimedia.dtos.Termin;
+import de.itch.multimedia.services.TerminSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,8 +11,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -22,14 +26,17 @@ public class TerminController {
     @Autowired
     private TerminDb terminDb;
 
+    @Autowired
+    private TerminSearchService terminSearchService;
+
     @Operation(summary = "Gibt alle Termine zurück", description = "Liefert eine Liste aller Termine in der Datenbank.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste der Termine erfolgreich abgerufen",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class)))
     })
     @GetMapping
-    public List<Termin> getAllTermine() {
-        return terminDb.findAll();
+    public List<Termin> getAllTermine(@RequestParam @Nullable Timestamp startTime, @RequestParam @Nullable Timestamp endTime) {
+        return terminSearchService.SearchTerminByDate(startTime, endTime);
     }
 
     @Operation(summary = "Gibt einen Termin zurück", description = "Liefert einen Termin anhand seiner Id in der Datenbank.")
