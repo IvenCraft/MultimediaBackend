@@ -2,6 +2,7 @@ package de.itch.multimedia.controller;
 
 import de.itch.multimedia.db.TerminDb;
 import de.itch.multimedia.dtos.Termin;
+import de.itch.multimedia.dtos.TerminUpdateCreateDto;
 import de.itch.multimedia.services.TerminSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,9 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
-import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/termin")
@@ -32,18 +32,26 @@ public class TerminController {
     @Operation(summary = "Gibt alle Termine zurück", description = "Liefert eine Liste aller Termine in der Datenbank.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Liste der Termine erfolgreich abgerufen",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class))),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
     @GetMapping
-    public List<Termin> getAllTermine(@RequestParam @Nullable Timestamp startTime, @RequestParam @Nullable Timestamp endTime) {
-        return terminSearchService.SearchTerminByDate(startTime, endTime);
+    public ResponseEntity<List<Termin>> getAllTermine(@RequestParam @Nullable String RangeStart, @RequestParam @Nullable String RangeEnd) {
+        List<Termin> list = null;
+        try {
+            list = terminSearchService.SearchTerminByDate(RangeStart, RangeEnd);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok().body(list);
     }
 
     @Operation(summary = "Gibt einen Termin zurück", description = "Liefert einen Termin anhand seiner Id in der Datenbank.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Termin erfolgreich abgerufen",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class))),
-            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden"),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
     @GetMapping("/{id}")
     public ResponseEntity<Termin> getTermin(Long id) {
@@ -56,34 +64,44 @@ public class TerminController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Termin erfolgreich geändert",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class))),
-            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden")
+            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden"),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
-    @PutMapping("/{id}")
-    public ResponseEntity<Termin> updateTermin(@PathVariable Long id, @RequestBody Termin terminUpdate) {
-        return terminDb.findById(id)
-                .map(termin -> {
-                    termin.setTitel(terminUpdate.getTitel());
-                    Termin updetedTermin = terminDb.save(termin);
-                    return ResponseEntity.ok().body(updetedTermin);
-                }).orElse(ResponseEntity.notFound().build());
+    @PatchMapping("/{id}")
+    public ResponseEntity<Termin> updateTermin(@PathVariable Long id, @RequestBody TerminUpdateCreateDto terminUpdateCreateDto) {
+        Optional<Termin> existingTermin = terminDb.findById(id);
+        if (existingTermin.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            Termin updatedTermin = terminSearchService.updateTermin(existingTermin.get(), terminUpdateCreateDto);
+            return ResponseEntity.ok().body(updatedTermin);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @Operation(summary = "Erstellt einen neuen Termin", description = "Fügt einen neuen Termin hinzu.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Termin erfolgreich erstellt",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class))),
-            @ApiResponse(responseCode = "400", description = "Ungültige Eingabe")
+            @ApiResponse(responseCode = "400", description = "Ungültige Eingabe"),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
     @PostMapping
-    public Termin createTermin(@RequestBody Termin termin) {
-        return terminDb.save(termin);
+    public ResponseEntity<Termin> createTermin(@RequestBody TerminUpdateCreateDto termin) {
+        try {
+            return ResponseEntity.ok().body(terminSearchService.createTermin(termin));
+        }catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @Operation(summary = "Löscht einen Termin", description = "Löscht einen Termin anhand seiner Id permanent aus der Datenbank.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Termin erfolgreich gelöscht",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Termin.class))),
-            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden")
+            @ApiResponse(responseCode = "204", description = "Termin erfolgreich gelöscht"),
+            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden"),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTermin(Long id) {

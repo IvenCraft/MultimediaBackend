@@ -5,10 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Data;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
+@Data
 public class Termin {
 
     @Id
@@ -19,42 +21,10 @@ public class Termin {
     @Schema(description = "Titel des Termins", example = "Besichtigung")
     private String titel;
 
-    @Schema(description = "Start des Termins", example = "Besichtigung")
-    private Timestamp startTime;
+    @Schema(description = "Start des Termins", example = "2024-11-14T23:00:00")
+    private LocalDateTime startTime;
 
-    @Schema(description = "Ende des Termins", example = "Besichtigung")
-    private Timestamp endTime;
-
-    public String getTitel() {
-        return titel;
-    }
-
-    public void setTitel(String titel) {
-        this.titel = titel;
-    }
-
-    public Timestamp getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Timestamp startTime) {
-        this.startTime = startTime;
-    }
-
-    public Timestamp getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Timestamp endTime) {
-        this.endTime = endTime;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Schema(description = "Ende des Termins", example = "2024-11-14T23:00:00")
+    private LocalDateTime endTime;
 
 }
