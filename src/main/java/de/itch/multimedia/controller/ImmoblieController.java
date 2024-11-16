@@ -1,10 +1,10 @@
 package de.itch.multimedia.controller;
 
+import de.itch.multimedia.db.ImageDb;
 import de.itch.multimedia.db.ImmoblieDb;
+import de.itch.multimedia.dtos.Image;
 import de.itch.multimedia.dtos.Immobile;
 import de.itch.multimedia.dtos.ImmoblieUpdateCreateDto;
-import de.itch.multimedia.dtos.Termin;
-import de.itch.multimedia.dtos.TerminUpdateCreateDto;
 import de.itch.multimedia.services.ImmoblieService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,6 +30,9 @@ public class ImmoblieController {
 
     @Autowired
     private ImmoblieDb immoblieDb;
+
+    @Autowired
+    private ImageDb imageDb;
 
     @Operation(summary = "Gibt alle Immobile zurück", description = "Liefert eine Liste aller Immobile in der Datenbank.")
     @ApiResponses(value = {
@@ -105,12 +108,12 @@ public class ImmoblieController {
 
     @Operation(summary = "Löscht eine Immobile", description = "Setzt den Aktive Status eine Immoblie auf false.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Termin erfolgreich gelöscht"),
-            @ApiResponse(responseCode = "404", description = "Termin nicht gefunden"),
+            @ApiResponse(responseCode = "204", description = "Immobile erfolgreich gelöscht"),
+            @ApiResponse(responseCode = "404", description = "Immobile nicht gefunden"),
             @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTermin(Long id) {
+    public ResponseEntity<Void> deleteImmoblie(Long id) {
         Immobile existingImmobile = immoblieDb.findById(id).orElse(null);
         if (existingImmobile == null) {
             return ResponseEntity.notFound().build();
@@ -118,6 +121,28 @@ public class ImmoblieController {
         try {
             existingImmobile.setAktiv(false);
             immoblieDb.save(existingImmobile);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @Operation(summary = "Löscht eine Immobile Permanent", description = "Löscht einen Immobile anhand seiner Id permanent aus der Datenbank sowie alle Bilder zu der Immobile.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Immobile und Bilder erfolgreich gelöscht"),
+            @ApiResponse(responseCode = "404", description = "Immobile nicht gefunden"),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
+    })
+    @DeleteMapping("/{id}/permanent")
+    public ResponseEntity<Void> deleteImmobliePermanent(Long id) {
+        Immobile existingImmobile = immoblieDb.findById(id).orElse(null);
+        if (existingImmobile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        List<Image> imageList = imageDb.findByImmobileId(id);
+        imageDb.deleteAll(imageList);
+        try {
+            immoblieDb.delete(existingImmobile);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

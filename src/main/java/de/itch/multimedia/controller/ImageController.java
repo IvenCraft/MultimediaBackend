@@ -4,7 +4,6 @@ import de.itch.multimedia.db.ImageDb;
 import de.itch.multimedia.db.ImmoblieDb;
 import de.itch.multimedia.dtos.Image;
 import de.itch.multimedia.dtos.Immobile;
-import de.itch.multimedia.dtos.Termin;
 import de.itch.multimedia.services.ImageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
