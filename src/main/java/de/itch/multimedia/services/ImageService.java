@@ -14,11 +14,12 @@ public class ImageService {
     @Autowired
     private ImageDb imageDb;
 
-    public Image saveImage(MultipartFile file) throws IOException {
+    public Image saveImage(MultipartFile file, Long immoblieId) throws IOException {
         Image image = new Image();
         image.setName(file.getOriginalFilename());
         image.setType(file.getContentType());
         image.setData(file.getBytes());
+        image.setImmobile(immoblieId);
 
         return imageDb.save(image);
     }

@@ -1,7 +1,9 @@
 package de.itch.multimedia.controller;
 
 import de.itch.multimedia.db.ImageDb;
+import de.itch.multimedia.db.ImmoblieDb;
 import de.itch.multimedia.dtos.Image;
+import de.itch.multimedia.dtos.Immobile;
 import de.itch.multimedia.dtos.Termin;
 import de.itch.multimedia.services.ImageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/images")
@@ -26,6 +29,12 @@ public class ImageController {
 
     @Autowired
     private ImageService imageService;
+
+    @Autowired
+    private ImageDb imageDb;
+
+    @Autowired
+    private ImmoblieDb immoblieDb;
 
 
     private static void accept(Object image) {
@@ -38,6 +47,7 @@ public class ImageController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bild erfolgreich hochgeladen"),
                     @ApiResponse(responseCode = "400", description = "Ungültige Datei"),
+                    @ApiResponse(responseCode = "404", description = "Immoblie nicht gefunden"),
                     @ApiResponse(responseCode = "500", description = "Serverfehler")
             }
     )
@@ -46,8 +56,12 @@ public class ImageController {
             @RequestParam("file")
             MultipartFile file)
     {
+        Optional<Immobile> immobile = immoblieDb.findById(immobileId);
+        if(immobile.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
             try {
-               Image save = imageService.saveImage(file);
+               Image save = imageService.saveImage(file, immobileId);
                 return ResponseEntity.ok().body(save);
             }catch (IOException e) {
                 return ResponseEntity.badRequest().build();
@@ -62,7 +76,7 @@ public class ImageController {
             @ApiResponse(responseCode = "500", description = "Serverfehler")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Image> getImage(@PathVariable Long id) {
+    public ResponseEntity<Image> getImage(@PathVariable("id") Long id) {
         try {
             Image image = imageService.getImageData(id);
             return ResponseEntity.ok()
@@ -70,6 +84,25 @@ public class ImageController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @Operation(summary = "Gibt alle Bilder einer Immoblie zurück", description = "Liefert eine Liste aller Bilder einer Immoblie in der Datenbank.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Liste der Bilder erfolgreich abgerufen",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Image.class))),
+            @ApiResponse(responseCode = "404", description = "Immoblie nicht gefunden"),
+            @ApiResponse(responseCode = "500", description = "Serverfehler")
+    })
+    @GetMapping("/immobile/{immobileId}")
+    public ResponseEntity<List<Image>> getImageImmoblieList(@PathVariable("immobileId") Long immobileId) {
+            Optional<Immobile> immobile = immoblieDb.findById(immobileId);
+            if(immobile.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            List<Image> image = imageDb.findByImmobileId(immobileId);
+            return ResponseEntity.ok()
+                    .body(image);
+
     }
 
     @Operation(summary = "Gibt einen Bild zurück im Content-Type", description = "Zeigt dirkt das Bild im Content-Type an")

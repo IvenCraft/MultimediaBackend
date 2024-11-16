@@ -69,12 +69,12 @@ public class TerminController {
     })
     @PatchMapping("/{id}")
     public ResponseEntity<Termin> updateTermin(@PathVariable Long id, @RequestBody TerminUpdateCreateDto terminUpdateCreateDto) {
-        Optional<Termin> existingTermin = terminDb.findById(id);
-        if (existingTermin.isEmpty()) {
+       Termin existingTermin = terminDb.findById(id).orElse(null);
+        if (existingTermin == null) {
             return ResponseEntity.notFound().build();
         }
         try {
-            Termin updatedTermin = terminSearchService.updateTermin(existingTermin.get(), terminUpdateCreateDto);
+            Termin updatedTermin = terminSearchService.updateTermin(existingTermin, terminUpdateCreateDto);
             return ResponseEntity.ok().body(updatedTermin);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

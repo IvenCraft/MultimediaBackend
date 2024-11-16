@@ -7,8 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
 
-import java.util.List;
-
 @Entity
 @Data
 public class Immobile {
@@ -22,8 +20,11 @@ public class Immobile {
     private String name;
 
     @Schema(description = "Preis der Immobile in Euro.", example = "150000.00")
-    private float preis;
+    private Float preis;
 
     @Schema(description = "Adresse der Immobile.", example = "Dratelnstraße 26, 21109 Hamburg")
     private String adresse;
+
+    @Schema(description = "Ob die Immobile aktuell verkauft wird", example = "true")
+    private boolean isAktiv;
 }
